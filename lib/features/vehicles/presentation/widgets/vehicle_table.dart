@@ -10,6 +10,7 @@ import '../../domain/vehicle_model.dart';
 import '../vehicle_provider.dart';
 
 /// Desktop-first Material 3 data table and responsive list for fleet vehicles.
+/// Hardened with Flexible, Expanded, and TextOverflow.ellipsis across all viewports.
 class VehicleTable extends ConsumerWidget {
   final List<VehicleModel> vehicles;
 
@@ -52,14 +53,62 @@ class VehicleTable extends ConsumerWidget {
               dataRowMinHeight: 64,
               dataRowMaxHeight: 64,
               columns: const <DataColumn>[
-                DataColumn(label: Text('LICENSE PLATE')),
-                DataColumn(label: Text('VEHICLE')),
-                DataColumn(label: Text('VIN')),
-                DataColumn(label: Text('TYPE')),
-                DataColumn(label: Text('STATUS')),
-                DataColumn(label: Text('ASSIGNED DRIVER')),
-                DataColumn(label: Text('MILEAGE')),
-                DataColumn(label: Text('ACTIONS')),
+                DataColumn(
+                  label: Text(
+                    'LICENSE PLATE',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'VEHICLE',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'VIN',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'TYPE',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'STATUS',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'ASSIGNED DRIVER',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'MILEAGE',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'ACTIONS',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
               rows: vehicles.map((VehicleModel vehicle) {
                 return DataRow(
@@ -84,6 +133,8 @@ class VehicleTable extends ConsumerWidget {
                         ),
                         child: Text(
                           vehicle.licensePlate,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.5,
@@ -95,40 +146,52 @@ class VehicleTable extends ConsumerWidget {
 
                     // Vehicle Make & Model
                     DataCell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${vehicle.year} ${vehicle.make} ${vehicle.model}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          Text(
-                            vehicle.fuelType,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? AppColors.darkTextMuted
-                                  : AppColors.lightTextMuted,
+                            Text(
+                              vehicle.fuelType,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.darkTextMuted
+                                    : AppColors.lightTextMuted,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
                     // VIN
                     DataCell(
-                      Text(
-                        vehicle.vin,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: 'monospace',
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 180),
+                        child: Text(
+                          vehicle.vin,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -144,7 +207,13 @@ class VehicleTable extends ConsumerWidget {
                             color: AppColors.primaryLight,
                           ),
                           const SizedBox(width: 6),
-                          Text(vehicle.type.label),
+                          Flexible(
+                            child: Text(
+                              vehicle.type.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -154,31 +223,38 @@ class VehicleTable extends ConsumerWidget {
 
                     // Driver
                     DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.person_outline_rounded,
-                            size: 16,
-                            color: isDark
-                                ? AppColors.darkTextMuted
-                                : AppColors.lightTextMuted,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            vehicle.assignedDriver ?? 'Unassigned',
-                            style: TextStyle(
-                              fontStyle: vehicle.assignedDriver == null
-                                  ? FontStyle.italic
-                                  : FontStyle.normal,
-                              color: vehicle.assignedDriver == null
-                                  ? (isDark
-                                      ? AppColors.darkTextMuted
-                                      : AppColors.lightTextMuted)
-                                  : null,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 150),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person_outline_rounded,
+                              size: 16,
+                              color: isDark
+                                  ? AppColors.darkTextMuted
+                                  : AppColors.lightTextMuted,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                vehicle.assignedDriver ?? 'Unassigned',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontStyle: vehicle.assignedDriver == null
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
+                                  color: vehicle.assignedDriver == null
+                                      ? (isDark
+                                          ? AppColors.darkTextMuted
+                                          : AppColors.lightTextMuted)
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -186,6 +262,8 @@ class VehicleTable extends ConsumerWidget {
                     DataCell(
                       Text(
                         vehicle.formattedMileage,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -238,26 +316,37 @@ class VehicleTable extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    vehicle.licensePlate,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Expanded(
+                    child: Text(
+                      vehicle.licensePlate,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   StatusBadge(status: vehicle.status, compact: true),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               Text(
                 'VIN: ${vehicle.vin} • ${vehicle.formattedMileage}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
               ),
               const SizedBox(height: 6),
               Text(
                 'Driver: ${vehicle.assignedDriver ?? "Unassigned"}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
@@ -271,7 +360,10 @@ class VehicleTable extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: AppColors.statusOutOfService),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.statusOutOfService,
+                    ),
                     onPressed: () => _confirmDelete(context, ref, vehicle),
                   ),
                 ],
@@ -305,6 +397,8 @@ class VehicleTable extends ConsumerWidget {
             const SizedBox(height: 16),
             const Text(
               'No Vehicles Match Your Search',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -314,8 +408,10 @@ class VehicleTable extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -326,7 +422,6 @@ class VehicleTable extends ConsumerWidget {
                     ref.read(vehicleTypeFilterProvider.notifier).state = null;
                   },
                 ),
-                const SizedBox(width: 12),
                 FilledButton.icon(
                   icon: const Icon(Icons.add_rounded, size: 16),
                   label: const Text('Register Vehicle'),

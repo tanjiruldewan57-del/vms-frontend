@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/auth_provider.dart';
 
 /// Desktop permanent side navigation panel for the VMS Admin shell.
+/// Fully guarded with Expanded and TextOverflow.ellipsis.
 class SidebarNav extends ConsumerWidget {
   final VoidCallback? onDestinationSelected;
 
@@ -71,6 +72,8 @@ class SidebarNav extends ConsumerWidget {
                     children: [
                       Text(
                         AppConstants.appShortName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.2,
@@ -78,6 +81,8 @@ class SidebarNav extends ConsumerWidget {
                       ),
                       Text(
                         'Fleet Admin Portal',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: isDark
                               ? AppColors.darkTextMuted
@@ -154,10 +159,14 @@ class SidebarNav extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            'Spring Boot API',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              'Spring Boot API',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -165,6 +174,8 @@ class SidebarNav extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Mock Architecture Active (Decoupled Foundation)',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
@@ -287,6 +298,8 @@ class _NavSectionHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
       child: Text(
         title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 11,
           letterSpacing: 0.8,
@@ -352,6 +365,8 @@ class _SidebarItem extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
@@ -370,4 +385,3 @@ class _SidebarItem extends StatelessWidget {
     );
   }
 }
-

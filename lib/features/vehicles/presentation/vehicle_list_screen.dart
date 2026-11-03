@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/responsive_layout.dart';
 import '../../../core/widgets/stat_summary_card.dart';
 import 'vehicle_provider.dart';
 import 'widgets/vehicle_filter_bar.dart';
@@ -17,7 +16,6 @@ class VehicleListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     final stats = ref.watch(vehicleStatsProvider);
     final filteredVehicles = ref.watch(filteredVehiclesProvider);
@@ -39,6 +37,8 @@ class VehicleListScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Fleet Overview',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -46,6 +46,8 @@ class VehicleListScreen extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Track, audit, and configure vehicle specifications across enterprise logistics.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: isDark
                               ? AppColors.darkTextSecondary
@@ -56,6 +58,7 @@ class VehicleListScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SizedBox(width: 16),
                 FilledButton.icon(
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text('Register Vehicle'),
@@ -71,8 +74,8 @@ class VehicleListScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // Metric Summary Cards Row
-            _buildMetricsGrid(context, stats, isDesktop),
+            // Metric Summary Cards with LayoutBuilder
+            _buildMetricsGrid(context, stats),
             const SizedBox(height: 24),
 
             // Search and Filter Controls
@@ -91,7 +94,6 @@ class VehicleListScreen extends ConsumerWidget {
   Widget _buildMetricsGrid(
     BuildContext context,
     VehicleFleetStats stats,
-    bool isDesktop,
   ) {
     final cards = <Widget>[
       StatSummaryCard(
@@ -124,29 +126,40 @@ class VehicleListScreen extends ConsumerWidget {
       ),
     ];
 
-    if (isDesktop) {
-      return Row(
-        children: [
-          for (int i = 0; i < cards.length; i++) ...[
-            if (i > 0) const SizedBox(width: 16),
-            Expanded(child: cards[i]),
-          ],
-        ],
-      );
-    }
-
-    // Tablet & Mobile 2x2 or column wrap
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final crossAxisCount = constraints.maxWidth > 550 ? 2 : 1;
-        return GridView.count(
-          crossAxisCount: crossAxisCount,
+        // If wide enough (>= 1080px), show all 4 in a row
+        if (constraints.maxWidth >= 1080) {
+          return Row(
+            children: [
+              for (int i = 0; i < cards.length; i++) ...[
+                if (i > 0) const SizedBox(width: 16),
+                Expanded(child: cards[i]),
+              ],
+            ],
+          );
+        }
+
+        // On intermediate widths (580px - 1079px), show 2x2 grid
+        if (constraints.maxWidth >= 580) {
+          return GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.8,
+            children: cards,
+          );
+        }
+
+        // On narrow mobile screens (< 580px), show stacked column
+        return ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: crossAxisCount == 2 ? 2.4 : 3.0,
-          children: cards,
+          itemCount: cards.length,
+          separatorBuilder: (BuildContext context, int index) => const SizedBox(height: 12),
+          itemBuilder: (BuildContext context, int index) => cards[index],
         );
       },
     );
@@ -157,4 +170,3 @@ class VehicleListScreen extends ConsumerWidget {
     return ((count / total) * 100).toStringAsFixed(0);
   }
 }
-

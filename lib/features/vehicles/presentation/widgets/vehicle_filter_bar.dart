@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../domain/vehicle_model.dart';
 import '../vehicle_provider.dart';
 
 /// Interactive search and filter control bar for fleet management.
+/// Designed with adaptive flex bounds and text overflow guards.
 class VehicleFilterBar extends ConsumerStatefulWidget {
   const VehicleFilterBar({super.key});
 
@@ -33,7 +33,6 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     final selectedStatus = ref.watch(vehicleStatusFilterProvider);
     final selectedType = ref.watch(vehicleTypeFilterProvider);
@@ -43,67 +42,76 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
         selectedStatus != null ||
         selectedType != null;
 
-    if (isDesktop) {
-      return Row(
-        children: [
-          // Search input field
-          Expanded(
-            flex: 4,
-            child: _buildSearchField(theme, isDark),
-          ),
-          const SizedBox(width: 12),
-
-          // Status filter dropdown
-          SizedBox(
-            width: 180,
-            child: _buildStatusDropdown(selectedStatus),
-          ),
-          const SizedBox(width: 12),
-
-          // Type filter dropdown
-          SizedBox(
-            width: 160,
-            child: _buildTypeDropdown(selectedType),
-          ),
-          const SizedBox(width: 12),
-
-          // Reset button
-          if (hasActiveFilters) ...[
-            OutlinedButton.icon(
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Reset'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // Desktop / wide container layout (>= 740px available width)
+        if (constraints.maxWidth >= 740) {
+          return Row(
+            children: [
+              // Search input field
+              Expanded(
+                flex: 4,
+                child: _buildSearchField(theme, isDark),
               ),
-              onPressed: _resetFilters,
+              const SizedBox(width: 12),
+
+              // Status filter dropdown
+              SizedBox(
+                width: 175,
+                child: _buildStatusDropdown(selectedStatus),
+              ),
+              const SizedBox(width: 12),
+
+              // Type filter dropdown
+              SizedBox(
+                width: 155,
+                child: _buildTypeDropdown(selectedType),
+              ),
+
+              // Reset button
+              if (hasActiveFilters) ...[
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Reset'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  ),
+                  onPressed: _resetFilters,
+                ),
+              ],
+            ],
+          );
+        }
+
+        // Narrow / Tablet / Mobile stacked layout (< 740px available width)
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSearchField(theme, isDark),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusDropdown(selectedStatus),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildTypeDropdown(selectedType),
+                ),
+                if (hasActiveFilters) ...[
+                  const SizedBox(width: 6),
+                  IconButton(
+                    tooltip: 'Reset Filters',
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: _resetFilters,
+                  ),
+                ],
+              ],
             ),
           ],
-        ],
-      );
-    }
-
-    // Tablet & Mobile stacked layout
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildSearchField(theme, isDark),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: _buildStatusDropdown(selectedStatus)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildTypeDropdown(selectedType)),
-            if (hasActiveFilters) ...[
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Reset Filters',
-                icon: const Icon(Icons.refresh_rounded),
-                onPressed: _resetFilters,
-              ),
-            ],
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -111,7 +119,7 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
-        hintText: 'Search by plate, make, model, VIN, or driver...',
+        hintText: 'Search plate, make, model, VIN, driver...',
         prefixIcon: const Icon(Icons.search_rounded, size: 20),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
@@ -132,14 +140,20 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
   Widget _buildStatusDropdown(VehicleStatus? selectedStatus) {
     return DropdownButtonFormField<VehicleStatus?>(
       value: selectedStatus,
+      isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Status',
         isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
       items: [
         const DropdownMenuItem<VehicleStatus?>(
           value: null,
-          child: Text('All Statuses'),
+          child: Text(
+            'All Statuses',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         ...VehicleStatus.values.map(
           (VehicleStatus status) => DropdownMenuItem<VehicleStatus?>(
@@ -156,7 +170,13 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(status.label),
+                Expanded(
+                  child: Text(
+                    status.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),
@@ -171,14 +191,20 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
   Widget _buildTypeDropdown(VehicleType? selectedType) {
     return DropdownButtonFormField<VehicleType?>(
       value: selectedType,
+      isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Type',
         isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
       items: [
         const DropdownMenuItem<VehicleType?>(
           value: null,
-          child: Text('All Types'),
+          child: Text(
+            'All Types',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         ...VehicleType.values.map(
           (VehicleType type) => DropdownMenuItem<VehicleType?>(
@@ -188,7 +214,13 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
               children: [
                 Icon(type.icon, size: 16, color: AppColors.primaryLight),
                 const SizedBox(width: 8),
-                Text(type.label),
+                Expanded(
+                  child: Text(
+                    type.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),
@@ -200,4 +232,3 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
     );
   }
 }
-

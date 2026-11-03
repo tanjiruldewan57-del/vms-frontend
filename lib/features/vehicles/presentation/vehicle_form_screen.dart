@@ -10,6 +10,7 @@ import '../domain/vehicle_model.dart';
 import 'vehicle_provider.dart';
 
 /// Form screen for registering a new vehicle or updating an existing vehicle.
+/// All input fields, dropdowns, and buttons are protected against flex overflow.
 class VehicleFormScreen extends ConsumerStatefulWidget {
   final String? vehicleId;
 
@@ -294,6 +295,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                   children: [
                     DropdownButtonFormField<VehicleType>(
                       value: _selectedType,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Vehicle Classification *',
                       ),
@@ -305,7 +307,13 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                             children: [
                               Icon(type.icon, size: 18, color: AppColors.primaryLight),
                               const SizedBox(width: 8),
-                              Text(type.label),
+                              Expanded(
+                                child: Text(
+                                  type.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -363,6 +371,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                       children: [
                         DropdownButtonFormField<VehicleStatus>(
                           value: _selectedStatus,
+                          isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: 'Operational Status *',
                           ),
@@ -381,7 +390,13 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(status.label),
+                                  Expanded(
+                                    child: Text(
+                                      status.label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                             );
@@ -429,18 +444,22 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 12),
-                  FilledButton.icon(
-                    icon: Icon(
-                      widget.isEditMode ? Icons.check_circle_rounded : Icons.save_rounded,
-                      size: 18,
+                  Flexible(
+                    child: FilledButton.icon(
+                      icon: Icon(
+                        widget.isEditMode ? Icons.check_circle_rounded : Icons.save_rounded,
+                        size: 18,
+                      ),
+                      label: Text(
+                        widget.isEditMode ? 'Update Vehicle' : 'Register Vehicle',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      ),
+                      onPressed: _handleSave,
                     ),
-                    label: Text(
-                      widget.isEditMode ? 'Update Vehicle' : 'Register Vehicle',
-                    ),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    ),
-                    onPressed: _handleSave,
                   ),
                 ],
               ),
@@ -471,9 +490,13 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
               ),
             ),
             const Text(' / ', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            Text(
-              widget.isEditMode ? 'Edit Vehicle' : 'New Registration',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            Flexible(
+              child: Text(
+                widget.isEditMode ? 'Edit Vehicle' : 'New Registration',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -482,6 +505,8 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
           widget.isEditMode
               ? 'Edit Vehicle Specifications'
               : 'Register New Fleet Asset',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -491,6 +516,8 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
           widget.isEditMode
               ? 'Update operational statuses, mileage records, and driver assignment.'
               : 'Enter initial vehicle metrics, identification data, and categorization.',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: AppColors.darkTextSecondary,
             fontSize: 13,

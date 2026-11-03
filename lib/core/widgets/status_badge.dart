@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../features/vehicles/domain/vehicle_model.dart';
 
 /// Pill badge representing a vehicle's operational status.
+/// Hardened with Flexible and TextOverflow.ellipsis against overflow.
 class StatusBadge extends StatelessWidget {
   final VehicleStatus status;
   final bool compact;
@@ -39,12 +40,16 @@ class StatusBadge extends StatelessWidget {
             ),
           ),
           SizedBox(width: compact ? 6.0 : 8.0),
-          Text(
-            status.label,
-            style: TextStyle(
-              color: status.foregroundColor,
-              fontSize: compact ? 11.0 : 12.0,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              status.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: status.foregroundColor,
+                fontSize: compact ? 11.0 : 12.0,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -52,4 +57,3 @@ class StatusBadge extends StatelessWidget {
     );
   }
 }
-

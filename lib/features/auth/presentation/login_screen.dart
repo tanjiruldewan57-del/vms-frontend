@@ -359,6 +359,8 @@ class _FeatureBullet extends StatelessWidget {
         Expanded(
           child: Text(
             text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,

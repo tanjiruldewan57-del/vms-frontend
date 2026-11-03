@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 
 /// Top App Bar providing route context, theme toggle, and quick actions.
+/// Hardened with Flexible and TextOverflow.ellipsis against overflow on narrow widths.
 class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
   final VoidCallback? onOpenDrawer;
 
@@ -37,7 +38,7 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
           // Drawer trigger for tablet/mobile
@@ -54,11 +55,15 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
           Expanded(
             child: Row(
               children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
+                Flexible(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
                 if (currentRoute == AppConstants.routeVehicleCreate) ...[
@@ -71,6 +76,8 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                     child: const Text(
                       'Registration',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: AppColors.primaryLight,
                         fontSize: 11,
@@ -82,6 +89,8 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
               ],
             ),
           ),
+
+          const SizedBox(width: 8),
 
           // Quick Theme Mode Toggle
           IconButton(
@@ -97,10 +106,9 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
             },
           ),
 
-          const SizedBox(width: 8),
-
           // Primary CTA (Desktop shortcut)
           if (isDesktop && currentRoute != AppConstants.routeVehicleCreate) ...[
+            const SizedBox(width: 8),
             FilledButton.icon(
               icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text('Add Vehicle'),
@@ -126,4 +134,3 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
     return 'VMS Admin Dashboard';
   }
 }
-

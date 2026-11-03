@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Reusable Material 3 Card wrapper with standardized padding, border, and background.
+/// Header row guarded with Expanded and TextOverflow.ellipsis against overflow.
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -45,13 +46,20 @@ class AppCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      title!,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        title!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    if (trailing != null) trailing!,
+                    if (trailing != null) ...[
+                      const SizedBox(width: 8),
+                      trailing!,
+                    ],
                   ],
                 ),
                 const SizedBox(height: 16),
