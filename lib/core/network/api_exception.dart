@@ -42,9 +42,17 @@ class ApiException implements Exception {
           final data = response.data;
           if (data is Map<String, dynamic>) {
             final statusCode = data['status'] as int? ?? response.statusCode;
-            final message = data['message'] as String? ?? 'An unexpected server error occurred.';
+            String message = data['message'] as String? ?? '';
             final error = data['error'] as String?;
             final path = data['path'] as String?;
+
+            if (message.isEmpty || message == 'Unauthorized') {
+              if (statusCode == 401) {
+                message = 'Invalid email or password. Please verify your credentials.';
+              } else {
+                message = 'An unexpected server error occurred.';
+              }
+            }
 
             Map<String, String>? fieldErrors;
             if (data['fieldErrors'] is List) {
@@ -70,9 +78,13 @@ class ApiException implements Exception {
             );
           }
         }
+        final statusCode = response?.statusCode;
+        final message = statusCode == 401
+            ? 'Invalid email or password. Please verify your credentials.'
+            : 'Server returned HTTP $statusCode error.';
         return ApiException(
-          statusCode: response?.statusCode,
-          message: 'Server returned HTTP ${response?.statusCode} error.',
+          statusCode: statusCode,
+          message: message,
           error: response?.statusMessage,
         );
 

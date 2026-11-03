@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_card.dart';
@@ -7,6 +8,7 @@ import '../../../core/widgets/responsive_layout.dart';
 import 'auth_provider.dart';
 
 /// Clean, responsive desktop-first Login screen tailored to Stark Group visual style.
+/// Connected to Spring Boot authentication endpoint `POST /api/v1/auth/login`.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,7 +22,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,6 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _fillDemoCredentials() {
+    ref.read(authProvider.notifier).clearError();
     _emailController.text = AppConstants.demoEmail;
     _passwordController.text = AppConstants.demoPassword;
   }
@@ -39,19 +41,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final authNotifier = ref.read(authProvider.notifier);
+    authNotifier.clearError();
 
-    // Short UI transition delay
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    final success = await authNotifier.login(
+      _emailController.text,
+      _passwordController.text,
+    );
 
     if (!mounted) return;
 
-    ref.read(authProvider.notifier).login(
-          _emailController.text,
-          _passwordController.text,
-        );
+    if (success) {
+      context.go(AppConstants.routeVehicles);
+    }
   }
 
   @override
@@ -59,6 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isDesktop = ResponsiveLayout.isDesktop(context);
+    final auth = ref.watch(authProvider);
 
     return Scaffold(
       body: Center(
@@ -85,7 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             flex: 6,
                             child: Padding(
                               padding: const EdgeInsets.all(40.0),
-                              child: _buildForm(context, theme, isDark),
+                              child: _buildForm(context, theme, isDark, auth),
                             ),
                           ),
                         ],
@@ -93,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     )
                   : Padding(
                       padding: const EdgeInsets.all(28.0),
-                      child: _buildForm(context, theme, isDark),
+                      child: _buildForm(context, theme, isDark, auth),
                     ),
             ),
           ),
@@ -102,7 +105,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildForm(BuildContext context, ThemeData theme, bool isDark) {
+  Widget _buildForm(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    AuthNotifier auth,
+  ) {
     return Form(
       key: _formKey,
       child: Column(
@@ -142,7 +150,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               fontSize: 13,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
+
+          // User-friendly Error Alert Banner on Invalid Credentials or Network Failure
+          if (auth.errorMessage != null)
+            _buildErrorBanner(auth.errorMessage!, isDark),
 
           // Email Input
           Text(
@@ -157,6 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               hintText: 'e.g. fleet.admin@starkgroup.com',
               prefixIcon: Icon(Icons.email_outlined, size: 20),
             ),
+            onChanged: (String _) => ref.read(authProvider.notifier).clearError(),
             validator: (String? value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please enter your corporate email.';
@@ -193,6 +206,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 },
               ),
             ),
+            onChanged: (String _) => ref.read(authProvider.notifier).clearError(),
             validator: (String? value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please enter your password.';
@@ -213,7 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(42),
             ),
-            onPressed: _fillDemoCredentials,
+            onPressed: auth.isLoading ? null : _fillDemoCredentials,
           ),
           const SizedBox(height: 16),
 
@@ -222,8 +236,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
             ),
-            onPressed: _isLoading ? null : _handleLogin,
-            child: _isLoading
+            onPressed: auth.isLoading ? null : _handleLogin,
+            child: auth.isLoading
                 ? const SizedBox(
                     width: 20,
                     height: 20,
@@ -240,6 +254,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Icon(Icons.arrow_forward_rounded, size: 18),
                     ],
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner(String message, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        color: AppColors.statusOutOfService.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: AppColors.statusOutOfService.withOpacity(0.4),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.statusOutOfService,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: isDark ? const Color(0xFFFCA5A5) : AppColors.statusOutOfService,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),

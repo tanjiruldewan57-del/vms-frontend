@@ -2,13 +2,20 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_config.dart';
 import 'api_exception.dart';
+import 'auth_interceptor.dart';
+import 'token_storage.dart';
 
 /// Centralized HTTP client wrapper providing resilient network communication with Spring Boot.
 class ApiClient {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  ApiClient({Dio? dio})
-      : _dio = dio ??
+  ApiClient({
+    Dio? dio,
+    TokenStorage? tokenStorage,
+    void Function()? onUnauthorized,
+  })  : _tokenStorage = tokenStorage ?? TokenStorage(),
+        _dio = dio ??
             Dio(
               BaseOptions(
                 baseUrl: ApiConfig.baseUrl,
@@ -20,9 +27,17 @@ class ApiClient {
                   'Accept': 'application/json',
                 },
               ),
-            );
+            ) {
+    _dio.interceptors.add(
+      AuthInterceptor(
+        tokenStorage: _tokenStorage,
+        onUnauthorized: onUnauthorized,
+      ),
+    );
+  }
 
   Dio get dio => _dio;
+  TokenStorage get tokenStorage => _tokenStorage;
 
   /// Executes an HTTP GET request.
   Future<Response<T>> get<T>(
@@ -85,6 +100,6 @@ class ApiClient {
 
 /// Global provider for the shared ApiClient instance.
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient();
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return ApiClient(tokenStorage: tokenStorage);
 });
-

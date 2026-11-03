@@ -16,6 +16,7 @@ class ApiConfig {
   static const Duration sendTimeout = Duration(seconds: 10);
 
   // Endpoints (Matching Spring Boot @RequestMapping exact paths)
+  static const String authLoginEndpoint = '/auth/login';
   static const String vehiclesEndpoint = '/vehicles';
   static String vehicleByIdEndpoint(int id) => '/vehicles/$id';
   static String vehicleByNumberEndpoint(String number) => '/vehicles/number/$number';
