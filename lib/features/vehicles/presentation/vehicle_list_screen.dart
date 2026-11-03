@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/stat_summary_card.dart';
 import 'vehicle_provider.dart';
 import 'widgets/vehicle_filter_bar.dart';
 import 'widgets/vehicle_table.dart';
 
-/// Main Dashboard and Fleet Inventory screen for Stark Group VMS.
+/// Main Dashboard and Fleet Inventory screen with Spring Boot REST integration.
+/// Displays explicit Loading, Empty, Success, and Error states.
 class VehicleListScreen extends ConsumerWidget {
   const VehicleListScreen({super.key});
 
@@ -17,6 +19,7 @@ class VehicleListScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final vehicleState = ref.watch(vehicleListProvider);
     final stats = ref.watch(vehicleStatsProvider);
     final filteredVehicles = ref.watch(filteredVehiclesProvider);
 
@@ -47,7 +50,7 @@ class VehicleListScreen extends ConsumerWidget {
                               ),
                             ),
                             child: const Text(
-                              'LOGISTICS & HEAVY DISTRIBUTION',
+                              'SPRING BOOT REST API // CONNECTED',
                               style: TextStyle(
                                 color: AppColors.starkOrangeLight,
                                 fontSize: 10,
@@ -70,7 +73,7 @@ class VehicleListScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Track, audit, and configure vehicle specifications across Stark Group operating divisions.',
+                        'Live vehicle data managed by Java Spring Boot backend service.',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -99,7 +102,7 @@ class VehicleListScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // Metric Summary Cards with LayoutBuilder
+            // Metric Summary Cards
             _buildMetricsGrid(context, stats),
             const SizedBox(height: 24),
 
@@ -107,9 +110,180 @@ class VehicleListScreen extends ConsumerWidget {
             const VehicleFilterBar(),
             const SizedBox(height: 16),
 
-            // Vehicle Table or Responsive Cards
-            VehicleTable(vehicles: filteredVehicles),
+            // Dynamic State Rendering: Loading, Error, Empty, Success
+            if (vehicleState.isLoading)
+              _buildLoadingState(theme, isDark)
+            else if (vehicleState.isError)
+              _buildErrorState(context, ref, vehicleState.errorMessage, vehicleState.errorDetails)
+            else if (vehicleState.isEmpty || filteredVehicles.isEmpty)
+              _buildEmptyState(context, ref)
+            else
+              VehicleTable(vehicles: filteredVehicles),
+
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(ThemeData theme, bool isDark) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(vertical: 64.0, horizontal: 24.0),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: AppColors.starkOrange,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Fetching Fleet Inventory...',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Synchronizing with Spring Boot service at /api/v1/vehicles',
+              style: TextStyle(
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(
+    BuildContext context,
+    WidgetRef ref,
+    String? message,
+    String? errorDetails,
+  ) {
+    return AppCard(
+      padding: const EdgeInsets.all(32.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.statusOutOfService.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.cloud_off_rounded,
+                  size: 40,
+                  color: AppColors.statusOutOfService,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Spring Boot Connection Error',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message ?? 'Failed to communicate with the Spring Boot REST API.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.darkTextSecondary,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              if (errorDetails != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Details: $errorDetails',
+                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.grey),
+                ),
+              ],
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Retry Connection'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.starkOrange,
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                ),
+                onPressed: () {
+                  ref.read(vehicleListProvider.notifier).loadVehicles();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.starkOrange.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.directions_car_outlined,
+                size: 40,
+                color: AppColors.starkOrange,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No Fleet Vehicles Found',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'The Spring Boot database returned no vehicles matching your filter criteria.',
+              style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Reset All Filters'),
+                  onPressed: () {
+                    ref.read(vehicleSearchQueryProvider.notifier).state = '';
+                    ref.read(vehicleCompanyFilterProvider.notifier).state = null;
+                    ref.read(vehicleTypeFilterProvider.notifier).state = null;
+                    ref.read(vehicleStatusFilterProvider.notifier).state = null;
+                    ref.read(vehicleListProvider.notifier).loadVehicles();
+                  },
+                ),
+                FilledButton.icon(
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Register Vehicle'),
+                  onPressed: () => context.go(AppConstants.routeVehicleCreate),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -129,25 +303,25 @@ class VehicleListScreen extends ConsumerWidget {
         accentColor: AppColors.starkOrangeLight,
       ),
       StatSummaryCard(
-        title: 'Active in Operation',
-        value: stats.active.toString(),
-        subtitle: '${_calculatePercentage(stats.active, stats.total)}% operational',
+        title: 'Available',
+        value: stats.available.toString(),
+        subtitle: 'Ready for assignment',
         icon: Icons.check_circle_outline_rounded,
         accentColor: AppColors.statusActive,
       ),
       StatSummaryCard(
-        title: 'In Maintenance',
+        title: 'In Use',
+        value: stats.inUse.toString(),
+        subtitle: 'On active delivery route',
+        icon: Icons.alt_route_rounded,
+        accentColor: AppColors.starkOrange,
+      ),
+      StatSummaryCard(
+        title: 'Under Maintenance',
         value: stats.maintenance.toString(),
         subtitle: 'Workshop inspection',
         icon: Icons.build_circle_outlined,
         accentColor: AppColors.statusMaintenance,
-      ),
-      StatSummaryCard(
-        title: 'Out of Service',
-        value: stats.outOfService.toString(),
-        subtitle: 'Awaiting repair',
-        icon: Icons.warning_amber_rounded,
-        accentColor: AppColors.statusOutOfService,
       ),
     ];
 
@@ -188,10 +362,5 @@ class VehicleListScreen extends ConsumerWidget {
         );
       },
     );
-  }
-
-  String _calculatePercentage(int count, int total) {
-    if (total == 0) return '0';
-    return ((count / total) * 100).toStringAsFixed(0);
   }
 }

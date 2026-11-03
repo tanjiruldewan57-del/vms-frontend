@@ -187,8 +187,8 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
     );
   }
 
-  Widget _buildTypeDropdown(VehicleType? selectedType) {
-    return DropdownButtonFormField<VehicleType?>(
+  Widget _buildTypeDropdown(String? selectedType) {
+    return DropdownButtonFormField<String?>(
       value: selectedType,
       isExpanded: true,
       decoration: const InputDecoration(
@@ -197,7 +197,7 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
       items: [
-        const DropdownMenuItem<VehicleType?>(
+        const DropdownMenuItem<String?>(
           value: null,
           child: Text(
             'All Types',
@@ -205,17 +205,21 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        ...VehicleType.values.map(
-          (VehicleType type) => DropdownMenuItem<VehicleType?>(
+        ...VehicleTypeHelper.defaultTypes.map(
+          (String type) => DropdownMenuItem<String?>(
             value: type,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(type.icon, size: 16, color: AppColors.starkOrange),
+                Icon(
+                  VehicleTypeHelper.getIcon(type),
+                  size: 16,
+                  color: AppColors.starkOrange,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    type.label,
+                    type,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -225,7 +229,7 @@ class _VehicleFilterBarState extends ConsumerState<VehicleFilterBar> {
           ),
         ),
       ],
-      onChanged: (VehicleType? value) {
+      onChanged: (String? value) {
         ref.read(vehicleTypeFilterProvider.notifier).state = value;
       },
     );

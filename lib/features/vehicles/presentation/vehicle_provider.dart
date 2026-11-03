@@ -1,56 +1,139 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api_exception.dart';
 import '../data/mock_vehicle_repository.dart';
+import '../data/vehicle_repository.dart';
 import '../domain/vehicle_model.dart';
+import 'vehicle_state.dart';
 
 /// Aggregated fleet metrics for Stark Group logistics operations.
 class VehicleFleetStats {
   final int total;
-  final int active;
+  final int available;
+  final int inUse;
   final int maintenance;
-  final int outOfService;
+  final int decommissioned;
 
   const VehicleFleetStats({
     required this.total,
-    required this.active,
+    required this.available,
+    required this.inUse,
     required this.maintenance,
-    required this.outOfService,
+    required this.decommissioned,
   });
 }
 
-/// State notifier managing the in-memory vehicle fleet collection.
-class VehicleNotifier extends StateNotifier<List<VehicleModel>> {
-  VehicleNotifier() : super(List<VehicleModel>.from(MockVehicleRepository.initialVehicles));
+/// State notifier managing the Spring Boot vehicle collection lifecycle and mutations.
+class VehicleListNotifier extends StateNotifier<VehicleListState> {
+  final VehicleRepository _repository;
 
-  /// Registers a new vehicle in the fleet inventory.
-  void addVehicle(VehicleModel vehicle) {
-    final newId = vehicle.id.isEmpty
-        ? 'stk-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}'
-        : vehicle.id;
-
-    final newVehicle = vehicle.copyWith(id: newId);
-    state = <VehicleModel>[newVehicle, ...state];
+  VehicleListNotifier(this._repository) : super(VehicleListState.initial()) {
+    loadVehicles();
   }
 
-  /// Updates an existing fleet asset.
-  void updateVehicle(VehicleModel updated) {
-    state = state.map((v) => v.id == updated.id ? updated : v).toList();
+  /// Loads fleet vehicles from the Spring Boot REST API.
+  Future<void> loadVehicles({
+    String? search,
+    String? company,
+    VehicleStatus? status,
+  }) async {
+    state = state.copyWith(
+      status: VehicleListStatus.loading,
+      clearError: true,
+    );
+
+    try {
+      final page = await _repository.fetchVehicles(
+        search: search,
+        company: company,
+        status: status,
+        size: 100,
+      );
+
+      state = state.copyWith(
+        status: VehicleListStatus.success,
+        vehicles: page.content,
+        totalElements: page.totalElements,
+        clearError: true,
+      );
+    } on ApiException catch (e) {
+      state = state.copyWith(
+        status: VehicleListStatus.error,
+        errorMessage: e.message,
+        errorDetails: e.error,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: VehicleListStatus.error,
+        errorMessage: 'An unexpected error occurred while loading vehicles: $e',
+      );
+    }
   }
 
-  /// Removes a vehicle from the fleet inventory by ID.
-  void deleteVehicle(String id) {
-    state = state.where((v) => v.id != id).toList();
+  /// Creates a new vehicle asset via `POST /api/v1/vehicles`.
+  Future<VehicleModel> createVehicle(VehicleModel vehicle) async {
+    state = state.copyWith(isSubmitting: true);
+    try {
+      final created = await _repository.addVehicle(vehicle);
+      final updatedList = <VehicleModel>[created, ...state.vehicles];
+      state = state.copyWith(
+        vehicles: updatedList,
+        totalElements: state.totalElements + 1,
+        isSubmitting: false,
+      );
+      return created;
+    } on ApiException {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(isSubmitting: false);
+      throw ApiException(message: 'Failed to create vehicle: $e');
+    }
   }
 
-  /// Restores default mock data for evaluation.
-  void resetToDefault() {
-    state = List<VehicleModel>.from(MockVehicleRepository.initialVehicles);
+  /// Updates an existing vehicle asset via `PUT /api/v1/vehicles/{id}`.
+  Future<VehicleModel> updateVehicle(int id, VehicleModel vehicle) async {
+    state = state.copyWith(isSubmitting: true);
+    try {
+      final updated = await _repository.editVehicle(id, vehicle);
+      final updatedList = state.vehicles
+          .map((VehicleModel v) => v.id == id ? updated : v)
+          .toList();
+      state = state.copyWith(
+        vehicles: updatedList,
+        isSubmitting: false,
+      );
+      return updated;
+    } on ApiException {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(isSubmitting: false);
+      throw ApiException(message: 'Failed to update vehicle: $e');
+    }
+  }
+
+  /// Deletes a vehicle by ID via `DELETE /api/v1/vehicles/{id}`.
+  Future<void> deleteVehicle(int id) async {
+    try {
+      await _repository.removeVehicle(id);
+      final updatedList = state.vehicles.where((VehicleModel v) => v.id != id).toList();
+      state = state.copyWith(
+        vehicles: updatedList,
+        totalElements: state.totalElements > 0 ? state.totalElements - 1 : 0,
+      );
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException(message: 'Failed to delete vehicle: $e');
+    }
   }
 }
 
 /// Global provider for the fleet inventory state.
 final vehicleListProvider =
-    StateNotifierProvider<VehicleNotifier, List<VehicleModel>>((ref) {
-  return VehicleNotifier();
+    StateNotifierProvider<VehicleListNotifier, VehicleListState>((ref) {
+  final repository = ref.watch(vehicleRepositoryProvider);
+  return VehicleListNotifier(repository);
 });
 
 /// Search query string provider.
@@ -69,13 +152,14 @@ final vehicleStatusFilterProvider = StateProvider<VehicleStatus?>((ref) {
 });
 
 /// Filter provider by vehicle type (null represents 'All Types').
-final vehicleTypeFilterProvider = StateProvider<VehicleType?>((ref) {
+final vehicleTypeFilterProvider = StateProvider<String?>((ref) {
   return null;
 });
 
 /// Filtered vehicle list computed from search query, company, type, and status filters.
 final filteredVehiclesProvider = Provider<List<VehicleModel>>((ref) {
-  final vehicles = ref.watch(vehicleListProvider);
+  final vehicleState = ref.watch(vehicleListProvider);
+  final vehicles = vehicleState.vehicles;
   final query = ref.watch(vehicleSearchQueryProvider).toLowerCase().trim();
   final companyFilter = ref.watch(vehicleCompanyFilterProvider);
   final statusFilter = ref.watch(vehicleStatusFilterProvider);
@@ -98,40 +182,48 @@ final filteredVehiclesProvider = Provider<List<VehicleModel>>((ref) {
 
 /// Computed statistics summarizing the fleet distribution.
 final vehicleStatsProvider = Provider<VehicleFleetStats>((ref) {
-  final vehicles = ref.watch(vehicleListProvider);
+  final vehicleState = ref.watch(vehicleListProvider);
+  final vehicles = vehicleState.vehicles;
 
-  int activeCount = 0;
+  int availableCount = 0;
+  int inUseCount = 0;
   int maintenanceCount = 0;
-  int outOfServiceCount = 0;
+  int decommissionedCount = 0;
 
   for (final v in vehicles) {
     switch (v.status) {
-      case VehicleStatus.active:
-        activeCount++;
+      case VehicleStatus.available:
+        availableCount++;
         break;
-      case VehicleStatus.maintenance:
+      case VehicleStatus.inUse:
+        inUseCount++;
+        break;
+      case VehicleStatus.underMaintenance:
         maintenanceCount++;
         break;
-      case VehicleStatus.outOfService:
-        outOfServiceCount++;
+      case VehicleStatus.decommissioned:
+        decommissionedCount++;
         break;
     }
   }
 
   return VehicleFleetStats(
-    total: vehicles.length,
-    active: activeCount,
+    total: vehicleState.totalElements > 0 ? vehicleState.totalElements : vehicles.length,
+    available: availableCount,
+    inUse: inUseCount,
     maintenance: maintenanceCount,
-    outOfService: outOfServiceCount,
+    decommissioned: decommissionedCount,
   );
 });
 
 /// Provides the list of unique operating companies present in the fleet.
 final availableCompaniesProvider = Provider<List<String>>((ref) {
-  final vehicles = ref.watch(vehicleListProvider);
+  final vehicleState = ref.watch(vehicleListProvider);
   final set = <String>{...MockVehicleRepository.companies};
-  for (final v in vehicles) {
-    set.add(v.company);
+  for (final v in vehicleState.vehicles) {
+    if (v.company.isNotEmpty) {
+      set.add(v.company);
+    }
   }
   final list = set.toList();
   list.sort();

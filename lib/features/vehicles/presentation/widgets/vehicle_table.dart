@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/responsive_layout.dart';
@@ -22,10 +23,6 @@ class VehicleTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (vehicles.isEmpty) {
-      return _buildEmptyState(context, ref);
-    }
-
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     if (isDesktop) {
@@ -161,14 +158,14 @@ class VehicleTable extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            vehicle.type.icon,
+                            vehicle.typeIcon,
                             size: 16,
                             color: AppColors.starkOrange,
                           ),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              vehicle.type.label,
+                              vehicle.type,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 13),
@@ -220,7 +217,9 @@ class VehicleTable extends ConsumerWidget {
                           IconButton(
                             icon: const Icon(Icons.edit_outlined, size: 18),
                             tooltip: 'Edit Vehicle',
-                            onPressed: () => context.go('/vehicles/${vehicle.id}/edit'),
+                            onPressed: vehicle.id != null
+                                ? () => context.go('/vehicles/${vehicle.id}/edit')
+                                : null,
                           ),
                           IconButton(
                             icon: const Icon(
@@ -229,7 +228,9 @@ class VehicleTable extends ConsumerWidget {
                               color: AppColors.statusOutOfService,
                             ),
                             tooltip: 'Delete Vehicle',
-                            onPressed: () => _confirmDelete(context, ref, vehicle),
+                            onPressed: vehicle.id != null
+                                ? () => _confirmDelete(context, ref, vehicle)
+                                : null,
                           ),
                         ],
                       ),
@@ -285,7 +286,7 @@ class VehicleTable extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${vehicle.type.label} • ${vehicle.company}',
+                '${vehicle.type} • ${vehicle.company}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
@@ -294,19 +295,21 @@ class VehicleTable extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('Edit'),
-                    onPressed: () => context.go('/vehicles/${vehicle.id}/edit'),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: AppColors.statusOutOfService,
+                  if (vehicle.id != null) ...[
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('Edit'),
+                      onPressed: () => context.go('/vehicles/${vehicle.id}/edit'),
                     ),
-                    onPressed: () => _confirmDelete(context, ref, vehicle),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: AppColors.statusOutOfService,
+                      ),
+                      onPressed: () => _confirmDelete(context, ref, vehicle),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -316,75 +319,16 @@ class VehicleTable extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.starkOrange.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.directions_car_outlined,
-                size: 40,
-                color: AppColors.starkOrange,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'No Fleet Vehicles Found',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Adjust search keywords or filter criteria, or register a new fleet asset.',
-              style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
-              children: [
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Reset All Filters'),
-                  onPressed: () {
-                    ref.read(vehicleSearchQueryProvider.notifier).state = '';
-                    ref.read(vehicleCompanyFilterProvider.notifier).state = null;
-                    ref.read(vehicleTypeFilterProvider.notifier).state = null;
-                    ref.read(vehicleStatusFilterProvider.notifier).state = null;
-                  },
-                ),
-                FilledButton.icon(
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text('Register Vehicle'),
-                  onPressed: () => context.go(AppConstants.routeVehicleCreate),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _confirmDelete(BuildContext context, WidgetRef ref, VehicleModel vehicle) {
+    if (vehicle.id == null) return;
+
     showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Confirm Asset Deletion'),
           content: Text(
-            'Are you sure you want to remove fleet asset "${vehicle.displayName}" (${vehicle.vehicleNumber}) from the Stark Group inventory?',
+            'Are you sure you want to permanently delete vehicle "${vehicle.displayName}" (${vehicle.vehicleNumber}) from the Spring Boot database?',
           ),
           actions: [
             TextButton(
@@ -395,21 +339,26 @@ class VehicleTable extends ConsumerWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.statusOutOfService,
               ),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                ref.read(vehicleListProvider.notifier).deleteVehicle(vehicle.id);
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Vehicle ${vehicle.vehicleNumber} removed from inventory.'),
-                    action: SnackBarAction(
-                      label: 'Undo',
-                      onPressed: () {
-                        ref.read(vehicleListProvider.notifier).addVehicle(vehicle);
-                      },
+                try {
+                  await ref.read(vehicleListProvider.notifier).deleteVehicle(vehicle.id!);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Vehicle ${vehicle.vehicleNumber} deleted successfully.'),
+                      backgroundColor: AppColors.statusActive,
                     ),
-                  ),
-                );
+                  );
+                } on ApiException catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete vehicle: ${e.message}'),
+                      backgroundColor: AppColors.statusOutOfService,
+                    ),
+                  );
+                }
               },
               child: const Text('Delete'),
             ),

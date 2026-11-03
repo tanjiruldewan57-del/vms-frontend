@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Operational statuses for Stark Group fleet assets.
+/// Operational lifecycle statuses for fleet vehicles matching Spring Boot enum VehicleStatus.
 enum VehicleStatus {
-  active('Active', AppColors.statusActive, AppColors.statusActiveBg),
-  maintenance('In Maintenance', AppColors.statusMaintenance, AppColors.statusMaintenanceBg),
-  outOfService('Out of Service', AppColors.statusOutOfService, AppColors.statusOutOfServiceBg);
+  available('Available', AppColors.statusActive, AppColors.statusActiveBg),
+  inUse('In Use', AppColors.starkOrange, Color(0x1AEA580C)),
+  underMaintenance('Under Maintenance', AppColors.statusMaintenance, AppColors.statusMaintenanceBg),
+  decommissioned('Decommissioned', AppColors.statusOutOfService, AppColors.statusOutOfServiceBg);
 
   final String label;
   final Color foregroundColor;
@@ -13,78 +14,112 @@ enum VehicleStatus {
 
   const VehicleStatus(this.label, this.foregroundColor, this.backgroundColor);
 
-  static VehicleStatus fromString(String value) {
-    return VehicleStatus.values.firstWhere(
-      (VehicleStatus status) =>
-          status.name.toLowerCase() == value.toLowerCase() ||
-          status.label.toLowerCase() == value.toLowerCase(),
-      orElse: () => VehicleStatus.active,
-    );
+  /// Exact backend enum string for Spring Boot request payloads.
+  String get apiValue {
+    switch (this) {
+      case VehicleStatus.available:
+        return 'AVAILABLE';
+      case VehicleStatus.inUse:
+        return 'IN_USE';
+      case VehicleStatus.underMaintenance:
+        return 'UNDER_MAINTENANCE';
+      case VehicleStatus.decommissioned:
+        return 'DECOMMISSIONED';
+    }
+  }
+
+  /// Parses a backend enum string into a strongly-typed enum.
+  static VehicleStatus fromString(String? value) {
+    if (value == null) return VehicleStatus.available;
+    final normalized = value.trim().toUpperCase().replaceAll(' ', '_');
+    switch (normalized) {
+      case 'AVAILABLE':
+        return VehicleStatus.available;
+      case 'IN_USE':
+      case 'INUSE':
+      case 'ACTIVE':
+        return VehicleStatus.inUse;
+      case 'UNDER_MAINTENANCE':
+      case 'MAINTENANCE':
+        return VehicleStatus.underMaintenance;
+      case 'DECOMMISSIONED':
+      case 'OUT_OF_SERVICE':
+        return VehicleStatus.decommissioned;
+      default:
+        return VehicleStatus.available;
+    }
   }
 }
 
-/// Vehicle categorization type for heavy materials distribution and operations.
-enum VehicleType {
-  heavyTruck('Heavy Truck', Icons.local_shipping_rounded),
-  distributionVan('Distribution Van', Icons.airport_shuttle_rounded),
-  flatbed('Flatbed Crane Truck', Icons.rv_hookup_rounded),
-  electricTransporter('Electric Transporter', Icons.electric_bolt_rounded),
-  lightUtility('Light Utility Vehicle', Icons.directions_car_rounded);
+/// Helper classifications for vehicle types.
+class VehicleTypeHelper {
+  const VehicleTypeHelper._();
 
-  final String label;
-  final IconData icon;
+  static const List<String> defaultTypes = <String>[
+    'Heavy Truck',
+    'Distribution Van',
+    'Flatbed Crane Truck',
+    'Electric Transporter',
+    'Light Utility Vehicle',
+  ];
 
-  const VehicleType(this.label, this.icon);
-
-  static VehicleType fromString(String value) {
-    return VehicleType.values.firstWhere(
-      (VehicleType type) =>
-          type.name.toLowerCase() == value.toLowerCase() ||
-          type.label.toLowerCase() == value.toLowerCase(),
-      orElse: () => VehicleType.heavyTruck,
-    );
+  static IconData getIcon(String type) {
+    final lower = type.toLowerCase();
+    if (lower.contains('van')) {
+      return Icons.airport_shuttle_rounded;
+    } else if (lower.contains('flatbed') || lower.contains('crane')) {
+      return Icons.rv_hookup_rounded;
+    } else if (lower.contains('electric')) {
+      return Icons.electric_bolt_rounded;
+    } else if (lower.contains('utility') || lower.contains('car')) {
+      return Icons.directions_car_rounded;
+    }
+    return Icons.local_shipping_rounded;
   }
 }
 
 /// Domain model representing a Stark Group fleet asset.
-/// Strictly models the 6 core domain properties:
-/// 1. Vehicle Number
-/// 2. Company
-/// 3. Type
-/// 4. Brand
-/// 5. Model
-/// 6. Status
+/// Strictly maps to Spring Boot VehicleResponse, VehicleCreateRequest, and VehicleUpdateRequest.
 class VehicleModel {
-  final String id;
+  final int? id;
   final String vehicleNumber;
   final String company;
-  final VehicleType type;
+  final String type;
   final String brand;
   final String model;
   final VehicleStatus status;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const VehicleModel({
-    required this.id,
+    this.id,
     required this.vehicleNumber,
     required this.company,
     required this.type,
     required this.brand,
     required this.model,
     required this.status,
+    this.createdAt,
+    this.updatedAt,
   });
 
   /// Formatted display string combining Brand and Model (e.g. "Volvo FH16 Aero 750").
   String get displayName => '$brand $model';
 
+  /// Icon based on vehicle type.
+  IconData get typeIcon => VehicleTypeHelper.getIcon(type);
+
   /// Creates a copy of this vehicle model with the given fields replaced.
   VehicleModel copyWith({
-    String? id,
+    int? id,
     String? vehicleNumber,
     String? company,
-    VehicleType? type,
+    String? type,
     String? brand,
     String? model,
     VehicleStatus? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return VehicleModel(
       id: id ?? this.id,
@@ -94,32 +129,66 @@ class VehicleModel {
       brand: brand ?? this.brand,
       model: model ?? this.model,
       status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  /// Converts this vehicle into a JSON-compatible map for future Spring Boot REST integration.
-  Map<String, dynamic> toJson() {
+  /// Maps model into Spring Boot VehicleCreateRequest JSON format.
+  Map<String, dynamic> toCreateJson() {
     return <String, dynamic>{
-      'id': id,
-      'vehicleNumber': vehicleNumber,
-      'company': company,
-      'type': type.name,
-      'brand': brand,
-      'model': model,
-      'status': status.name,
+      'vehicleNumber': vehicleNumber.trim().toUpperCase(),
+      'company': company.trim(),
+      'type': type.trim(),
+      'brand': brand.trim(),
+      'model': model.trim(),
+      'status': status.apiValue,
     };
   }
 
-  /// Parses a vehicle model from a JSON map.
+  /// Maps model into Spring Boot VehicleUpdateRequest JSON format.
+  Map<String, dynamic> toUpdateJson() {
+    return <String, dynamic>{
+      'vehicleNumber': vehicleNumber.trim().toUpperCase(),
+      'company': company.trim(),
+      'type': type.trim(),
+      'brand': brand.trim(),
+      'model': model.trim(),
+      'status': status.apiValue,
+    };
+  }
+
+  /// Converts this vehicle into a general JSON map.
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (id != null) 'id': id,
+      'vehicleNumber': vehicleNumber,
+      'company': company,
+      'type': type,
+      'brand': brand,
+      'model': model,
+      'status': status.apiValue,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+    };
+  }
+
+  /// Parses a vehicle model from a Spring Boot JSON response payload.
   factory VehicleModel.fromJson(Map<String, dynamic> json) {
     return VehicleModel(
-      id: json['id'] as String,
-      vehicleNumber: json['vehicleNumber'] as String,
-      company: json['company'] as String,
-      type: VehicleType.fromString(json['type'] as String),
-      brand: json['brand'] as String,
-      model: json['model'] as String,
-      status: VehicleStatus.fromString(json['status'] as String),
+      id: (json['id'] as num?)?.toInt(),
+      vehicleNumber: json['vehicleNumber'] as String? ?? '',
+      company: json['company'] as String? ?? '',
+      type: json['type'] as String? ?? 'Heavy Truck',
+      brand: json['brand'] as String? ?? '',
+      model: json['model'] as String? ?? '',
+      status: VehicleStatus.fromString(json['status'] as String?),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 }
