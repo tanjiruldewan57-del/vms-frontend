@@ -1,0 +1,3 @@
+# Feature-first domain modules: vehicle_management, driver_dispatch, maintenance, telemetry.
+# Reserved for application feature implementations.
+

@@ -1,0 +1,32 @@
+name: vms_frontend
+description: Vehicle Management System - Flutter Web Client
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+
+  # Networking & HTTP (Stateless REST client)
+  dio: ^5.7.0
+
+  # Modern Declarative Web Routing
+  go_router: ^14.3.2
+
+  # State Management Architecture
+  flutter_riverpod: ^2.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
