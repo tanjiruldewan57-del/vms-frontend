@@ -7,15 +7,16 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
   return ThemeMode.dark;
 });
 
-/// Material 3 Theme configurations for VMS Admin Web.
+/// Material 3 Theme configurations tailored to Stark Group's industrial aesthetic.
 class AppTheme {
   const AppTheme._();
 
   static ThemeData get darkTheme {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+      seedColor: AppColors.starkOrange,
       brightness: Brightness.dark,
       surface: AppColors.darkSurface,
+      primary: AppColors.starkOrange,
     );
 
     return ThemeData(
@@ -28,7 +29,7 @@ class AppTheme {
         color: AppColors.darkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: AppColors.darkBorder),
         ),
         margin: EdgeInsets.zero,
@@ -47,7 +48,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primaryLight, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.starkOrange, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -58,7 +59,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.starkOrange,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -90,8 +91,8 @@ class AppTheme {
         headingTextStyle: const TextStyle(
           color: AppColors.darkTextSecondary,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
         dataTextStyle: const TextStyle(
           color: AppColors.darkTextPrimary,
@@ -104,9 +105,10 @@ class AppTheme {
 
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+      seedColor: AppColors.starkOrange,
       brightness: Brightness.light,
       surface: AppColors.lightSurface,
+      primary: AppColors.starkOrange,
     );
 
     return ThemeData(
@@ -119,7 +121,7 @@ class AppTheme {
         color: AppColors.lightCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: AppColors.lightBorder),
         ),
         margin: EdgeInsets.zero,
@@ -138,7 +140,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.starkOrange, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -149,7 +151,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.starkOrange,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -181,8 +183,8 @@ class AppTheme {
         headingTextStyle: const TextStyle(
           color: AppColors.lightTextSecondary,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
         dataTextStyle: const TextStyle(
           color: AppColors.lightTextPrimary,
@@ -193,4 +195,3 @@ class AppTheme {
     );
   }
 }
-

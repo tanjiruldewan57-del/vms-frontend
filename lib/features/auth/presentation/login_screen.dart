@@ -6,7 +6,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import 'auth_provider.dart';
 
-/// Clean, responsive desktop-first Login screen for VMS Administrators.
+/// Clean, responsive desktop-first Login screen tailored to Stark Group visual style.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -43,8 +43,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate short network delay for realistic UI feedback
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+    // Short UI transition delay
+    await Future<void>.delayed(const Duration(milliseconds: 350));
 
     if (!mounted) return;
 
@@ -66,7 +66,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           padding: const EdgeInsets.all(24.0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isDesktop ? 900.0 : 460.0,
+              maxWidth: isDesktop ? 920.0 : 460.0,
             ),
             child: AppCard(
               padding: EdgeInsets.zero,
@@ -115,18 +115,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: AppColors.starkOrange.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: AppColors.primaryLight,
+                  Icons.admin_panel_settings_rounded,
+                  color: AppColors.starkOrangeLight,
                   size: 20,
                 ),
               ),
               const SizedBox(width: 10),
               Text(
-                'Admin Authentication',
+                'Fleet Admin Portal',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
@@ -134,9 +134,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            'Sign in to manage and audit fleet operations.',
+            'Sign in to manage and audit Stark Group logistics assets.',
             style: TextStyle(
               color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
               fontSize: 13,
@@ -146,7 +146,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // Email Input
           Text(
-            'Email Address',
+            'Stark Group Enterprise Email',
             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -154,12 +154,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
-              hintText: 'e.g. admin@vms-fleet.io',
+              hintText: 'e.g. fleet.admin@starkgroup.com',
               prefixIcon: Icon(Icons.email_outlined, size: 20),
             ),
             validator: (String? value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Please enter your email address.';
+                return 'Please enter your corporate email.';
               }
               if (!value.contains('@') || !value.contains('.')) {
                 return 'Please enter a valid email address.';
@@ -171,7 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // Password Input
           Text(
-            'Password',
+            'Account Password',
             style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -179,7 +179,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             controller: _passwordController,
             obscureText: _obscurePassword,
             decoration: InputDecoration(
-              hintText: 'Enter your account password',
+              hintText: 'Enter account password',
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -206,10 +206,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Demo Credentials Fast-Fill Button
+          // Demo Credentials Quick Fill Button
           OutlinedButton.icon(
-            icon: const Icon(Icons.key_rounded, size: 16),
-            label: const Text('Fill Demo Admin Credentials'),
+            icon: const Icon(Icons.bolt_rounded, size: 18, color: AppColors.starkOrange),
+            label: const Text('Fill Demo Stark Admin Credentials'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(42),
             ),
@@ -235,7 +235,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Sign In to Portal'),
+                      Text('Access Fleet Operations'),
                       SizedBox(width: 8),
                       Icon(Icons.arrow_forward_rounded, size: 18),
                     ],
@@ -258,8 +258,8 @@ class _HeroBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF131D31) : const Color(0xFFF1F5F9),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          bottomLeft: Radius.circular(12),
+          topLeft: Radius.circular(10),
+          bottomLeft: Radius.circular(10),
         ),
       ),
       padding: const EdgeInsets.all(40.0),
@@ -274,27 +274,47 @@ class _HeroBanner extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: [AppColors.starkOrange, AppColors.starkOrangeHover],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.starkOrange.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: const Icon(
-                  Icons.directions_car_filled_rounded,
+                  Icons.local_shipping_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: 26,
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
-                AppConstants.appName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
+              const Text(
+                'STARK GROUP',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              const Text(
+                'Vehicle Management System',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.starkOrangeLight,
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
-                'Next-generation fleet administration, vehicle life-cycle management, and maintenance telemetry.',
+                'Northern Europe\'s leading distributor of heavy building materials, construction logistics, and fleet operations.',
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -308,19 +328,19 @@ class _HeroBanner extends StatelessWidget {
             children: [
               _FeatureBullet(
                 icon: Icons.check_circle_outline_rounded,
-                text: 'Desktop-optimized fleet data tables',
+                text: 'Multi-company division oversight (DK, UK, DE, Suomi)',
                 isDark: isDark,
               ),
               const SizedBox(height: 12),
               _FeatureBullet(
                 icon: Icons.check_circle_outline_rounded,
-                text: 'Decoupled Spring Boot architectural design',
+                text: 'Heavy tractors, crane flatbeds & electric transporters',
                 isDark: isDark,
               ),
               const SizedBox(height: 12),
               _FeatureBullet(
                 icon: Icons.check_circle_outline_rounded,
-                text: 'Material 3 responsive web layout',
+                text: 'Responsive Material 3 desktop admin architecture',
                 isDark: isDark,
               ),
             ],
@@ -354,7 +374,7 @@ class _FeatureBullet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.statusActive),
+        const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.starkOrange),
         const SizedBox(width: 10),
         Expanded(
           child: Text(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Operational statuses for a fleet vehicle.
+/// Operational statuses for Stark Group fleet assets.
 enum VehicleStatus {
   active('Active', AppColors.statusActive, AppColors.statusActiveBg),
   maintenance('In Maintenance', AppColors.statusMaintenance, AppColors.statusMaintenanceBg),
@@ -15,21 +15,21 @@ enum VehicleStatus {
 
   static VehicleStatus fromString(String value) {
     return VehicleStatus.values.firstWhere(
-      (status) => status.name.toLowerCase() == value.toLowerCase() ||
+      (VehicleStatus status) =>
+          status.name.toLowerCase() == value.toLowerCase() ||
           status.label.toLowerCase() == value.toLowerCase(),
       orElse: () => VehicleStatus.active,
     );
   }
 }
 
-/// Vehicle categorization type.
+/// Vehicle categorization type for heavy materials distribution and operations.
 enum VehicleType {
-  sedan('Sedan', Icons.directions_car_outlined),
-  suv('SUV', Icons.airport_shuttle_outlined),
-  truck('Truck', Icons.local_shipping_outlined),
-  van('Van', Icons.directions_bus_outlined),
-  electric('Electric', Icons.electric_car_outlined),
-  hybrid('Hybrid', Icons.eco_outlined);
+  heavyTruck('Heavy Truck', Icons.local_shipping_rounded),
+  distributionVan('Distribution Van', Icons.airport_shuttle_rounded),
+  flatbed('Flatbed Crane Truck', Icons.rv_hookup_rounded),
+  electricTransporter('Electric Transporter', Icons.electric_bolt_rounded),
+  lightUtility('Light Utility Vehicle', Icons.directions_car_rounded);
 
   final String label;
   final IconData icon;
@@ -38,92 +38,62 @@ enum VehicleType {
 
   static VehicleType fromString(String value) {
     return VehicleType.values.firstWhere(
-      (type) => type.name.toLowerCase() == value.toLowerCase() ||
+      (VehicleType type) =>
+          type.name.toLowerCase() == value.toLowerCase() ||
           type.label.toLowerCase() == value.toLowerCase(),
-      orElse: () => VehicleType.sedan,
+      orElse: () => VehicleType.heavyTruck,
     );
   }
 }
 
-/// Domain model representing a vehicle in the fleet.
+/// Domain model representing a Stark Group fleet asset.
+/// Strictly models the 6 core domain properties:
+/// 1. Vehicle Number
+/// 2. Company
+/// 3. Type
+/// 4. Brand
+/// 5. Model
+/// 6. Status
 class VehicleModel {
   final String id;
-  final String licensePlate;
-  final String vin;
-  final String make;
-  final String model;
-  final int year;
+  final String vehicleNumber;
+  final String company;
   final VehicleType type;
+  final String brand;
+  final String model;
   final VehicleStatus status;
-  final int mileage;
-  final String fuelType;
-  final String? assignedDriver;
-  final String? notes;
-  final DateTime? lastServicedDate;
 
   const VehicleModel({
     required this.id,
-    required this.licensePlate,
-    required this.vin,
-    required this.make,
-    required this.model,
-    required this.year,
+    required this.vehicleNumber,
+    required this.company,
     required this.type,
+    required this.brand,
+    required this.model,
     required this.status,
-    required this.mileage,
-    required this.fuelType,
-    this.assignedDriver,
-    this.notes,
-    this.lastServicedDate,
   });
 
-  /// Human-friendly display string (e.g. "2023 Ford F-150").
-  String get displayName => '$year $make $model';
-
-  /// Formatted mileage with thousands separators (e.g. "24,500 mi").
-  String get formattedMileage {
-    final str = mileage.toString();
-    final buffer = StringBuffer();
-    final length = str.length;
-    for (int i = 0; i < length; i++) {
-      if (i > 0 && (length - i) % 3 == 0) {
-        buffer.write(',');
-      }
-      buffer.write(str[i]);
-    }
-    return '${buffer.toString()} mi';
-  }
+  /// Formatted display string combining Brand and Model (e.g. "Volvo FH16 Aero 750").
+  String get displayName => '$brand $model';
 
   /// Creates a copy of this vehicle model with the given fields replaced.
   VehicleModel copyWith({
     String? id,
-    String? licensePlate,
-    String? vin,
-    String? make,
-    String? model,
-    int? year,
+    String? vehicleNumber,
+    String? company,
     VehicleType? type,
+    String? brand,
+    String? model,
     VehicleStatus? status,
-    int? mileage,
-    String? fuelType,
-    String? assignedDriver,
-    String? notes,
-    DateTime? lastServicedDate,
   }) {
     return VehicleModel(
       id: id ?? this.id,
-      licensePlate: licensePlate ?? this.licensePlate,
-      vin: vin ?? this.vin,
-      make: make ?? this.make,
-      model: model ?? this.model,
-      year: year ?? this.year,
+      vehicleNumber: vehicleNumber ?? this.vehicleNumber,
+      company: company ?? this.company,
       type: type ?? this.type,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
       status: status ?? this.status,
-      mileage: mileage ?? this.mileage,
-      fuelType: fuelType ?? this.fuelType,
-      assignedDriver: assignedDriver ?? this.assignedDriver,
-      notes: notes ?? this.notes,
-      lastServicedDate: lastServicedDate ?? this.lastServicedDate,
     );
   }
 
@@ -131,18 +101,12 @@ class VehicleModel {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
-      'licensePlate': licensePlate,
-      'vin': vin,
-      'make': make,
-      'model': model,
-      'year': year,
+      'vehicleNumber': vehicleNumber,
+      'company': company,
       'type': type.name,
+      'brand': brand,
+      'model': model,
       'status': status.name,
-      'mileage': mileage,
-      'fuelType': fuelType,
-      'assignedDriver': assignedDriver,
-      'notes': notes,
-      'lastServicedDate': lastServicedDate?.toIso8601String(),
     };
   }
 
@@ -150,21 +114,12 @@ class VehicleModel {
   factory VehicleModel.fromJson(Map<String, dynamic> json) {
     return VehicleModel(
       id: json['id'] as String,
-      licensePlate: json['licensePlate'] as String,
-      vin: json['vin'] as String,
-      make: json['make'] as String,
-      model: json['model'] as String,
-      year: (json['year'] as num).toInt(),
+      vehicleNumber: json['vehicleNumber'] as String,
+      company: json['company'] as String,
       type: VehicleType.fromString(json['type'] as String),
+      brand: json['brand'] as String,
+      model: json['model'] as String,
       status: VehicleStatus.fromString(json['status'] as String),
-      mileage: (json['mileage'] as num).toInt(),
-      fuelType: json['fuelType'] as String,
-      assignedDriver: json['assignedDriver'] as String?,
-      notes: json['notes'] as String?,
-      lastServicedDate: json['lastServicedDate'] != null
-          ? DateTime.tryParse(json['lastServicedDate'] as String)
-          : null,
     );
   }
 }
-

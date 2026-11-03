@@ -8,7 +8,7 @@ import 'vehicle_provider.dart';
 import 'widgets/vehicle_filter_bar.dart';
 import 'widgets/vehicle_table.dart';
 
-/// Main Dashboard and Fleet Inventory screen.
+/// Main Dashboard and Fleet Inventory screen for Stark Group VMS.
 class VehicleListScreen extends ConsumerWidget {
   const VehicleListScreen({super.key});
 
@@ -35,17 +35,42 @@ class VehicleListScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.starkOrange.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: AppColors.starkOrange.withOpacity(0.3),
+                              ),
+                            ),
+                            child: const Text(
+                              'LOGISTICS & HEAVY DISTRIBUTION',
+                              style: TextStyle(
+                                color: AppColors.starkOrangeLight,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       Text(
-                        'Fleet Overview',
+                        'Fleet Inventory',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Track, audit, and configure vehicle specifications across enterprise logistics.',
+                        'Track, audit, and configure vehicle specifications across Stark Group operating divisions.',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -97,14 +122,14 @@ class VehicleListScreen extends ConsumerWidget {
   ) {
     final cards = <Widget>[
       StatSummaryCard(
-        title: 'Total Fleet',
+        title: 'Total Fleet Assets',
         value: stats.total.toString(),
-        subtitle: 'All tracked assets',
-        icon: Icons.directions_car_rounded,
-        accentColor: AppColors.primaryLight,
+        subtitle: 'All tracked vehicles',
+        icon: Icons.local_shipping_rounded,
+        accentColor: AppColors.starkOrangeLight,
       ),
       StatSummaryCard(
-        title: 'Active Fleet',
+        title: 'Active in Operation',
         value: stats.active.toString(),
         subtitle: '${_calculatePercentage(stats.active, stats.total)}% operational',
         icon: Icons.check_circle_outline_rounded,
@@ -113,14 +138,14 @@ class VehicleListScreen extends ConsumerWidget {
       StatSummaryCard(
         title: 'In Maintenance',
         value: stats.maintenance.toString(),
-        subtitle: 'Scheduled services',
+        subtitle: 'Workshop inspection',
         icon: Icons.build_circle_outlined,
         accentColor: AppColors.statusMaintenance,
       ),
       StatSummaryCard(
         title: 'Out of Service',
         value: stats.outOfService.toString(),
-        subtitle: 'Awaiting repair/inspection',
+        subtitle: 'Awaiting repair',
         icon: Icons.warning_amber_rounded,
         accentColor: AppColors.statusOutOfService,
       ),
@@ -128,7 +153,7 @@ class VehicleListScreen extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        // If wide enough (>= 1080px), show all 4 in a row
+        // Wide desktop container (>= 1080px): 4 cards in single row
         if (constraints.maxWidth >= 1080) {
           return Row(
             children: [
@@ -140,7 +165,7 @@ class VehicleListScreen extends ConsumerWidget {
           );
         }
 
-        // On intermediate widths (580px - 1079px), show 2x2 grid
+        // Intermediate width (580px - 1079px): 2x2 grid
         if (constraints.maxWidth >= 580) {
           return GridView.count(
             crossAxisCount: 2,
@@ -153,7 +178,7 @@ class VehicleListScreen extends ConsumerWidget {
           );
         }
 
-        // On narrow mobile screens (< 580px), show stacked column
+        // Narrow width (< 580px): vertical stacked list
         return ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

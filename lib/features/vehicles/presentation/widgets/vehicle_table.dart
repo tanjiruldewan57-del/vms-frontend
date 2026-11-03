@@ -9,8 +9,9 @@ import '../../../../core/widgets/status_badge.dart';
 import '../../domain/vehicle_model.dart';
 import '../vehicle_provider.dart';
 
-/// Desktop-first Material 3 data table and responsive list for fleet vehicles.
-/// Hardened with Flexible, Expanded, and TextOverflow.ellipsis across all viewports.
+/// Desktop-first Material 3 data table and responsive list for Stark Group fleet assets.
+/// Columns strictly align with domain requirements:
+/// Vehicle Number, Company, Type, Brand, Model, Status, Actions.
 class VehicleTable extends ConsumerWidget {
   final List<VehicleModel> vehicles;
 
@@ -41,7 +42,7 @@ class VehicleTable extends ConsumerWidget {
     return AppCard(
       padding: EdgeInsets.zero,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
@@ -55,21 +56,14 @@ class VehicleTable extends ConsumerWidget {
               columns: const <DataColumn>[
                 DataColumn(
                   label: Text(
-                    'LICENSE PLATE',
+                    'VEHICLE NUMBER',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 DataColumn(
                   label: Text(
-                    'VEHICLE',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'VIN',
+                    'COMPANY',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -83,21 +77,21 @@ class VehicleTable extends ConsumerWidget {
                 ),
                 DataColumn(
                   label: Text(
+                    'BRAND',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'MODEL',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
                     'STATUS',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'ASSIGNED DRIVER',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    'MILEAGE',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -113,12 +107,12 @@ class VehicleTable extends ConsumerWidget {
               rows: vehicles.map((VehicleModel vehicle) {
                 return DataRow(
                   cells: <DataCell>[
-                    // License Plate
+                    // 1. Vehicle Number
                     DataCell(
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 4,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
                           color: isDark
@@ -132,62 +126,81 @@ class VehicleTable extends ConsumerWidget {
                           ),
                         ),
                         child: Text(
-                          vehicle.licensePlate,
+                          vehicle.vehicleNumber,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.6,
+                            fontFamily: 'monospace',
                             fontSize: 13,
                           ),
                         ),
                       ),
                     ),
 
-                    // Vehicle Make & Model
+                    // 2. Company
                     DataCell(
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 220),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${vehicle.year} ${vehicle.make} ${vehicle.model}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              vehicle.fuelType,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark
-                                    ? AppColors.darkTextMuted
-                                    : AppColors.lightTextMuted,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          vehicle.company,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),
 
-                    // VIN
+                    // 3. Type
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            vehicle.type.icon,
+                            size: 16,
+                            color: AppColors.starkOrange,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              vehicle.type.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 4. Brand
+                    DataCell(
+                      Text(
+                        vehicle.brand,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+
+                    // 5. Model
                     DataCell(
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 180),
                         child: Text(
-                          vehicle.vin,
+                          vehicle.model,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'monospace',
+                            fontSize: 13,
                             color: isDark
                                 ? AppColors.darkTextSecondary
                                 : AppColors.lightTextSecondary,
@@ -196,77 +209,8 @@ class VehicleTable extends ConsumerWidget {
                       ),
                     ),
 
-                    // Type
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            vehicle.type.icon,
-                            size: 16,
-                            color: AppColors.primaryLight,
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              vehicle.type.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Status
+                    // 6. Status
                     DataCell(StatusBadge(status: vehicle.status)),
-
-                    // Driver
-                    DataCell(
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 150),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.person_outline_rounded,
-                              size: 16,
-                              color: isDark
-                                  ? AppColors.darkTextMuted
-                                  : AppColors.lightTextMuted,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                vehicle.assignedDriver ?? 'Unassigned',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontStyle: vehicle.assignedDriver == null
-                                      ? FontStyle.italic
-                                      : FontStyle.normal,
-                                  color: vehicle.assignedDriver == null
-                                      ? (isDark
-                                          ? AppColors.darkTextMuted
-                                          : AppColors.lightTextMuted)
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Mileage
-                    DataCell(
-                      Text(
-                        vehicle.formattedMileage,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
 
                     // Actions
                     DataCell(
@@ -318,10 +262,14 @@ class VehicleTable extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      vehicle.licensePlate,
+                      vehicle.vehicleNumber,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -330,24 +278,17 @@ class VehicleTable extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+                '${vehicle.brand} ${vehicle.model}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               Text(
-                'VIN: ${vehicle.vin} • ${vehicle.formattedMileage}',
+                '${vehicle.type.label} • ${vehicle.company}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Driver: ${vehicle.assignedDriver ?? "Unassigned"}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
               Row(
@@ -385,25 +326,25 @@ class VehicleTable extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.starkOrange.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.directions_car_outlined,
                 size: 40,
-                color: AppColors.primaryLight,
+                color: AppColors.starkOrange,
               ),
             ),
             const SizedBox(height: 16),
             const Text(
-              'No Vehicles Match Your Search',
+              'No Fleet Vehicles Found',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Try adjusting your search query, status filters, or register a new vehicle.',
+              'Adjust search keywords or filter criteria, or register a new fleet asset.',
               style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
@@ -415,11 +356,12 @@ class VehicleTable extends ConsumerWidget {
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Clear Filters'),
+                  label: const Text('Reset All Filters'),
                   onPressed: () {
                     ref.read(vehicleSearchQueryProvider.notifier).state = '';
-                    ref.read(vehicleStatusFilterProvider.notifier).state = null;
+                    ref.read(vehicleCompanyFilterProvider.notifier).state = null;
                     ref.read(vehicleTypeFilterProvider.notifier).state = null;
+                    ref.read(vehicleStatusFilterProvider.notifier).state = null;
                   },
                 ),
                 FilledButton.icon(
@@ -440,9 +382,9 @@ class VehicleTable extends ConsumerWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Confirm Deletion'),
+          title: const Text('Confirm Asset Deletion'),
           content: Text(
-            'Are you sure you want to remove vehicle "${vehicle.displayName}" (${vehicle.licensePlate}) from the fleet inventory?',
+            'Are you sure you want to remove fleet asset "${vehicle.displayName}" (${vehicle.vehicleNumber}) from the Stark Group inventory?',
           ),
           actions: [
             TextButton(
@@ -459,7 +401,7 @@ class VehicleTable extends ConsumerWidget {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Vehicle ${vehicle.licensePlate} was deleted.'),
+                    content: Text('Vehicle ${vehicle.vehicleNumber} removed from inventory.'),
                     action: SnackBarAction(
                       label: 'Undo',
                       onPressed: () {

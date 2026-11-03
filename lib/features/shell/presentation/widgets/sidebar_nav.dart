@@ -5,8 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/auth_provider.dart';
 
-/// Desktop permanent side navigation panel for the VMS Admin shell.
-/// Fully guarded with Expanded and TextOverflow.ellipsis.
+/// Desktop permanent side navigation panel with Stark Group visual style.
 class SidebarNav extends ConsumerWidget {
   final VoidCallback? onDestinationSelected;
 
@@ -35,7 +34,7 @@ class SidebarNav extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Branding Header
+          // Stark Group Branding Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
             child: Row(
@@ -45,21 +44,21 @@ class SidebarNav extends ConsumerWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryHover],
+                      colors: [AppColors.starkOrange, AppColors.starkOrangeHover],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.starkOrange.withOpacity(0.35),
                         blurRadius: 8,
-                        offset: const Offset(0, 4),
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.directions_car_filled_rounded,
+                    Icons.local_shipping_rounded,
                     color: Colors.white,
                     size: 22,
                   ),
@@ -70,23 +69,25 @@ class SidebarNav extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        AppConstants.appShortName,
+                      const Text(
+                        'STARK GROUP',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: 0.6,
                         ),
                       ),
                       Text(
-                        'Fleet Admin Portal',
+                        'Fleet Portal (VMS)',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: isDark
                               ? AppColors.darkTextMuted
                               : AppColors.lightTextMuted,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -106,9 +107,9 @@ class SidebarNav extends ConsumerWidget {
                 _NavSectionHeader(title: 'OPERATIONS', isDark: isDark),
                 const SizedBox(height: 6),
                 _SidebarItem(
-                  icon: Icons.directions_car_outlined,
-                  activeIcon: Icons.directions_car_filled,
-                  title: 'Fleet Vehicles',
+                  icon: Icons.local_shipping_outlined,
+                  activeIcon: Icons.local_shipping_rounded,
+                  title: 'Fleet Inventory',
                   isActive: currentRoute == AppConstants.routeVehicles,
                   onTap: () {
                     context.go(AppConstants.routeVehicles);
@@ -128,10 +129,10 @@ class SidebarNav extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                _NavSectionHeader(title: 'INTEGRATION', isDark: isDark),
+                _NavSectionHeader(title: 'DIVISIONS & STATUS', isDark: isDark),
                 const SizedBox(height: 8),
 
-                // Spring Boot Backend Status Badge
+                // Stark Group Hub status container
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -161,11 +162,11 @@ class SidebarNav extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Spring Boot API',
+                              'Stark Logistics Hub',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
@@ -173,7 +174,7 @@ class SidebarNav extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Mock Architecture Active (Decoupled Foundation)',
+                        'Denmark • UK • Germany • Suomi • Nordics',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -200,11 +201,11 @@ class SidebarNav extends ConsumerWidget {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppColors.primary.withOpacity(0.2),
+                  backgroundColor: AppColors.starkOrange.withOpacity(0.2),
                   child: Text(
-                    auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : 'A',
+                    auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : 'S',
                     style: const TextStyle(
-                      color: AppColors.primaryLight,
+                      color: AppColors.starkOrangeLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -226,7 +227,7 @@ class SidebarNav extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        auth.userRole.isNotEmpty ? auth.userRole : 'Administrator',
+                        auth.userRole.isNotEmpty ? auth.userRole : 'Operations Lead',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -259,7 +260,7 @@ class SidebarNav extends ConsumerWidget {
         return AlertDialog(
           title: const Text('Sign Out'),
           content: const Text(
-            'Are you sure you want to end your current administrative session?',
+            'Are you sure you want to end your current Stark Group administrative session?',
           ),
           actions: [
             TextButton(
@@ -342,12 +343,12 @@ class _SidebarItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive
                 ? (isDark
-                    ? AppColors.primary.withOpacity(0.2)
-                    : AppColors.primary.withOpacity(0.1))
+                    ? AppColors.starkOrange.withOpacity(0.18)
+                    : AppColors.starkOrange.withOpacity(0.1))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: isActive
-                ? Border.all(color: AppColors.primary.withOpacity(0.3))
+                ? Border.all(color: AppColors.starkOrange.withOpacity(0.35))
                 : null,
           ),
           child: Row(
@@ -356,7 +357,7 @@ class _SidebarItem extends StatelessWidget {
                 isActive ? activeIcon : icon,
                 size: 20,
                 color: isActive
-                    ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                    ? AppColors.starkOrangeLight
                     : (isDark
                         ? AppColors.darkTextSecondary
                         : AppColors.lightTextSecondary),
@@ -371,7 +372,7 @@ class _SidebarItem extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                     color: isActive
-                        ? (isDark ? Colors.white : AppColors.primary)
+                        ? (isDark ? Colors.white : AppColors.starkOrange)
                         : (isDark
                             ? AppColors.darkTextPrimary
                             : AppColors.lightTextPrimary),

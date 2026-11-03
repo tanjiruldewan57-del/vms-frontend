@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/mock_vehicle_repository.dart';
 import '../domain/vehicle_model.dart';
 
-/// Aggregated fleet metrics for executive and operational oversight.
+/// Aggregated fleet metrics for Stark Group logistics operations.
 class VehicleFleetStats {
   final int total;
   final int active;
@@ -21,17 +21,17 @@ class VehicleFleetStats {
 class VehicleNotifier extends StateNotifier<List<VehicleModel>> {
   VehicleNotifier() : super(List<VehicleModel>.from(MockVehicleRepository.initialVehicles));
 
-  /// Adds a new vehicle to the fleet.
+  /// Registers a new vehicle in the fleet inventory.
   void addVehicle(VehicleModel vehicle) {
     final newId = vehicle.id.isEmpty
-        ? 'v-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}'
+        ? 'stk-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}'
         : vehicle.id;
 
     final newVehicle = vehicle.copyWith(id: newId);
     state = <VehicleModel>[newVehicle, ...state];
   }
 
-  /// Updates an existing vehicle with new details.
+  /// Updates an existing fleet asset.
   void updateVehicle(VehicleModel updated) {
     state = state.map((v) => v.id == updated.id ? updated : v).toList();
   }
@@ -41,13 +41,13 @@ class VehicleNotifier extends StateNotifier<List<VehicleModel>> {
     state = state.where((v) => v.id != id).toList();
   }
 
-  /// Restores initial mock data for testing.
+  /// Restores default mock data for evaluation.
   void resetToDefault() {
     state = List<VehicleModel>.from(MockVehicleRepository.initialVehicles);
   }
 }
 
-/// Global provider for the vehicle fleet state.
+/// Global provider for the fleet inventory state.
 final vehicleListProvider =
     StateNotifierProvider<VehicleNotifier, List<VehicleModel>>((ref) {
   return VehicleNotifier();
@@ -58,35 +58,41 @@ final vehicleSearchQueryProvider = StateProvider<String>((ref) {
   return '';
 });
 
-/// Filter provider by vehicle status (null represents 'All').
+/// Filter provider for Operating Company (null represents 'All Companies').
+final vehicleCompanyFilterProvider = StateProvider<String?>((ref) {
+  return null;
+});
+
+/// Filter provider by vehicle status (null represents 'All Statuses').
 final vehicleStatusFilterProvider = StateProvider<VehicleStatus?>((ref) {
   return null;
 });
 
-/// Filter provider by vehicle type (null represents 'All').
+/// Filter provider by vehicle type (null represents 'All Types').
 final vehicleTypeFilterProvider = StateProvider<VehicleType?>((ref) {
   return null;
 });
 
-/// Filtered vehicle list computed from search query, status, and type filters.
+/// Filtered vehicle list computed from search query, company, type, and status filters.
 final filteredVehiclesProvider = Provider<List<VehicleModel>>((ref) {
   final vehicles = ref.watch(vehicleListProvider);
   final query = ref.watch(vehicleSearchQueryProvider).toLowerCase().trim();
+  final companyFilter = ref.watch(vehicleCompanyFilterProvider);
   final statusFilter = ref.watch(vehicleStatusFilterProvider);
   final typeFilter = ref.watch(vehicleTypeFilterProvider);
 
-  return vehicles.where((v) {
+  return vehicles.where((VehicleModel v) {
     final matchesQuery = query.isEmpty ||
-        v.licensePlate.toLowerCase().contains(query) ||
-        v.make.toLowerCase().contains(query) ||
-        v.model.toLowerCase().contains(query) ||
-        v.vin.toLowerCase().contains(query) ||
-        (v.assignedDriver?.toLowerCase().contains(query) ?? false);
+        v.vehicleNumber.toLowerCase().contains(query) ||
+        v.company.toLowerCase().contains(query) ||
+        v.brand.toLowerCase().contains(query) ||
+        v.model.toLowerCase().contains(query);
 
+    final matchesCompany = companyFilter == null || v.company == companyFilter;
     final matchesStatus = statusFilter == null || v.status == statusFilter;
     final matchesType = typeFilter == null || v.type == typeFilter;
 
-    return matchesQuery && matchesStatus && matchesType;
+    return matchesQuery && matchesCompany && matchesStatus && matchesType;
   }).toList();
 });
 
@@ -120,3 +126,14 @@ final vehicleStatsProvider = Provider<VehicleFleetStats>((ref) {
   );
 });
 
+/// Provides the list of unique operating companies present in the fleet.
+final availableCompaniesProvider = Provider<List<String>>((ref) {
+  final vehicles = ref.watch(vehicleListProvider);
+  final set = <String>{...MockVehicleRepository.companies};
+  for (final v in vehicles) {
+    set.add(v.company);
+  }
+  final list = set.toList();
+  list.sort();
+  return list;
+});

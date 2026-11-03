@@ -7,7 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 
 /// Top App Bar providing route context, theme toggle, and quick actions.
-/// Hardened with Flexible and TextOverflow.ellipsis against overflow on narrow widths.
+/// Incorporates Stark Group industrial header styling.
 class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
   final VoidCallback? onOpenDrawer;
 
@@ -61,7 +61,8 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
                       fontSize: 18,
                     ),
                   ),
@@ -71,7 +72,7 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.15),
+                      color: AppColors.starkOrange.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
@@ -79,9 +80,9 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: AppColors.primaryLight,
+                        color: AppColors.starkOrangeLight,
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -111,7 +112,7 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
             const SizedBox(width: 8),
             FilledButton.icon(
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Add Vehicle'),
+              label: const Text('Register Vehicle'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
@@ -131,6 +132,6 @@ class TopNavBar extends ConsumerWidget implements PreferredSizeWidget {
     } else if (route.contains('/edit')) {
       return 'Edit Vehicle Specifications';
     }
-    return 'VMS Admin Dashboard';
+    return 'Stark Group Fleet Portal';
   }
 }
