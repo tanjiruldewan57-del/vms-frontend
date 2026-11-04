@@ -326,9 +326,9 @@ class VehicleTable extends ConsumerWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Confirm Asset Deletion'),
-          content: Text(
-            'Are you sure you want to permanently delete vehicle "${vehicle.displayName}" (${vehicle.vehicleNumber}) from the Spring Boot database?',
+          title: const Text('Delete Vehicle'),
+          content: const Text(
+            'Are you sure you want to delete this vehicle?',
           ),
           actions: [
             TextButton(

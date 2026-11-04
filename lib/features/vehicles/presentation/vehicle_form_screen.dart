@@ -6,7 +6,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/responsive_layout.dart';
-import '../data/mock_vehicle_repository.dart';
+import '../data/vehicle_repository.dart';
 import '../domain/vehicle_model.dart';
 import 'vehicle_provider.dart';
 
@@ -29,6 +29,14 @@ class VehicleFormScreen extends ConsumerStatefulWidget {
 }
 
 class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
+  static const List<String> defaultCompanies = <String>[
+    'Stark Denmark Logistics',
+    'Stark Building Materials UK',
+    'Stark Deutschland GmbH',
+    'Stark Suomi Distribution',
+    'Stark Distribution Nordics',
+  ];
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _vehicleNumberController;
@@ -39,6 +47,8 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
   String _selectedType = VehicleTypeHelper.defaultTypes.first;
   VehicleStatus _selectedStatus = VehicleStatus.available;
   bool _initializedFromExisting = false;
+  bool _isLoadingVehicle = false;
+  bool _loadFailed = false;
   bool _isSaving = false;
   String? _serverErrorMessage;
 
@@ -48,22 +58,28 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     _vehicleNumberController = TextEditingController();
     _brandController = TextEditingController();
     _modelController = TextEditingController();
-    _selectedCompany = MockVehicleRepository.companies.first;
+    _selectedCompany = defaultCompanies.first;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (widget.isEditMode && !_initializedFromExisting) {
-      _loadExistingVehicleData();
       _initializedFromExisting = true;
+      _loadExistingVehicleData();
     }
   }
 
-  void _loadExistingVehicleData() {
+  Future<void> _loadExistingVehicleData() async {
     final targetId = widget.parsedId;
-    if (targetId == null) return;
+    if (targetId == null) {
+      setState(() {
+        _loadFailed = true;
+      });
+      return;
+    }
 
+    // 1. Try to populate from in-memory state if available
     final vehicles = ref.read(vehicleListProvider).vehicles;
     final vehicle = vehicles.cast<VehicleModel?>().firstWhere(
           (VehicleModel? v) => v?.id == targetId,
@@ -71,13 +87,43 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
         );
 
     if (vehicle != null) {
-      _vehicleNumberController.text = vehicle.vehicleNumber;
-      _brandController.text = vehicle.brand;
-      _modelController.text = vehicle.model;
-      _selectedCompany = vehicle.company;
-      _selectedType = vehicle.type;
-      _selectedStatus = vehicle.status;
+      _populateForm(vehicle);
+      return;
     }
+
+    // 2. Fallback to fetching live from Spring Boot backend
+    setState(() {
+      _isLoadingVehicle = true;
+      _loadFailed = false;
+    });
+
+    try {
+      final fetched = await ref.read(vehicleRepositoryProvider).fetchVehicleById(targetId);
+      if (mounted) {
+        _populateForm(fetched);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loadFailed = true;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingVehicle = false;
+        });
+      }
+    }
+  }
+
+  void _populateForm(VehicleModel vehicle) {
+    _vehicleNumberController.text = vehicle.vehicleNumber;
+    _brandController.text = vehicle.brand;
+    _modelController.text = vehicle.model;
+    _selectedCompany = vehicle.company;
+    _selectedType = vehicle.type;
+    _selectedStatus = vehicle.status;
   }
 
   @override
@@ -98,7 +144,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
       _serverErrorMessage = null;
     });
 
-    final company = _selectedCompany ?? MockVehicleRepository.companies.first;
+    final company = _selectedCompany ?? defaultCompanies.first;
 
     try {
       if (widget.isEditMode) {
@@ -118,6 +164,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
         );
 
         await ref.read(vehicleListProvider.notifier).updateVehicle(targetId, updated);
+        await ref.read(vehicleListProvider.notifier).loadVehicles();
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +184,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
         );
 
         final created = await ref.read(vehicleListProvider.notifier).createVehicle(newVehicle);
+        await ref.read(vehicleListProvider.notifier).loadVehicles();
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -150,22 +198,33 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
       }
 
       if (!mounted) return;
-      context.go(AppConstants.routeVehicles);
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(AppConstants.routeVehicles);
+      }
     } on ApiException catch (e) {
+      final friendlyMessage = (e.statusCode == 409 ||
+              e.message.toLowerCase().contains('already exists') ||
+              e.message.toLowerCase().contains('duplicate') ||
+              e.message.toLowerCase().contains('conflict'))
+          ? 'Vehicle number already exists in the fleet'
+          : e.message;
+
       setState(() {
         _isSaving = false;
-        _serverErrorMessage = e.message;
+        _serverErrorMessage = friendlyMessage;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.message}'),
+          content: Text(friendlyMessage),
           backgroundColor: AppColors.statusOutOfService,
         ),
       );
     } catch (e) {
       setState(() {
         _isSaving = false;
-        _serverErrorMessage = e.toString();
+        _serverErrorMessage = 'An unexpected error occurred while saving the vehicle: $e';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -181,15 +240,24 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     final theme = Theme.of(context);
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
-    // If edit mode but vehicle was not found in provider
+    // If edit mode and loading vehicle details
     if (widget.isEditMode) {
-      final targetId = widget.parsedId;
-      final exists = targetId != null &&
-          ref.watch(vehicleListProvider).vehicles.any((VehicleModel v) => v.id == targetId);
-      if (!exists && !ref.watch(vehicleListProvider).isLoading) {
+      if (_isLoadingVehicle) {
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(
+              color: AppColors.starkOrange,
+            ),
+          ),
+        );
+      }
+      if (_loadFailed) {
         return _buildNotFoundState(context);
       }
     }
+
+    final liveCompanies = ref.watch(availableCompaniesProvider);
+    final companies = <String>{...defaultCompanies, ...liveCompanies}.toList()..sort();
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -260,7 +328,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                         labelText: 'Operating Company *',
                         prefixIcon: Icon(Icons.business_rounded, size: 20),
                       ),
-                      items: MockVehicleRepository.companies.map((String comp) {
+                      items: companies.map((String comp) {
                         return DropdownMenuItem<String>(
                           value: comp,
                           child: Text(
@@ -416,51 +484,48 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 32),
 
-              // Bottom Action Buttons
+              // Bottom Actions Bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
-                    onPressed: _isSaving ? null : () => context.go(AppConstants.routeVehicles),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    ),
+                    onPressed: _isSaving
+                        ? null
+                        : () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go(AppConstants.routeVehicles);
+                            }
+                          },
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 12),
-                  Flexible(
-                    child: FilledButton.icon(
-                      icon: _isSaving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Icon(
-                              widget.isEditMode ? Icons.check_circle_rounded : Icons.save_rounded,
-                              size: 18,
-                            ),
-                      label: Text(
-                        _isSaving
-                            ? 'Saving to Backend...'
-                            : (widget.isEditMode ? 'Update Vehicle' : 'Register Vehicle'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      ),
-                      onPressed: _isSaving ? null : _handleSave,
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.starkOrange,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                     ),
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.save_rounded, size: 18),
+                    label: Text(
+                      _isSaving
+                          ? 'Persisting to Database...'
+                          : (widget.isEditMode ? 'Update Vehicle Asset' : 'Register Vehicle'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: _isSaving ? null : _handleSave,
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
             ],
           ),
         ),
@@ -475,24 +540,29 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
         Row(
           children: [
             InkWell(
-              onTap: () => context.go(AppConstants.routeVehicles),
+              onTap: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppConstants.routeVehicles);
+                }
+              },
               borderRadius: BorderRadius.circular(4),
               child: const Text(
-                'Fleet',
+                'Fleet Inventory',
                 style: TextStyle(
-                  color: AppColors.starkOrangeLight,
+                  color: AppColors.starkOrange,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
               ),
             ),
-            const Text(' / ', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            Flexible(
-              child: Text(
-                widget.isEditMode ? 'Edit Vehicle' : 'New Registration',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
+            const Icon(Icons.chevron_right, size: 16, color: AppColors.darkTextMuted),
+            Text(
+              widget.isEditMode ? 'Edit Vehicle' : 'Register Asset',
+              style: const TextStyle(
+                color: AppColors.darkTextMuted,
+                fontSize: 13,
               ),
             ),
           ],
@@ -594,7 +664,13 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
               ),
               const SizedBox(height: 20),
               FilledButton(
-                onPressed: () => context.go(AppConstants.routeVehicles),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppConstants.routeVehicles);
+                  }
+                },
                 child: const Text('Back to Fleet Inventory'),
               ),
             ],

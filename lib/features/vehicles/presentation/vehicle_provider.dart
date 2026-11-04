@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
-import '../data/mock_vehicle_repository.dart';
 import '../data/vehicle_repository.dart';
 import '../domain/vehicle_model.dart';
 import 'vehicle_state.dart';
@@ -216,13 +215,13 @@ final vehicleStatsProvider = Provider<VehicleFleetStats>((ref) {
   );
 });
 
-/// Provides the list of unique operating companies present in the fleet.
+/// Provides the list of unique operating companies present in the live fleet.
 final availableCompaniesProvider = Provider<List<String>>((ref) {
   final vehicleState = ref.watch(vehicleListProvider);
-  final set = <String>{...MockVehicleRepository.companies};
+  final set = <String>{};
   for (final v in vehicleState.vehicles) {
-    if (v.company.isNotEmpty) {
-      set.add(v.company);
+    if (v.company.trim().isNotEmpty) {
+      set.add(v.company.trim());
     }
   }
   final list = set.toList();

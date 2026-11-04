@@ -46,7 +46,11 @@ class ApiException implements Exception {
             final error = data['error'] as String?;
             final path = data['path'] as String?;
 
-            if (message.isEmpty || message == 'Unauthorized') {
+            if (statusCode == 409 ||
+                message.toLowerCase().contains('already exists') ||
+                message.toLowerCase().contains('duplicate')) {
+              message = 'Vehicle number already exists in the fleet';
+            } else if (message.isEmpty || message == 'Unauthorized') {
               if (statusCode == 401) {
                 message = 'Invalid email or password. Please verify your credentials.';
               } else {
@@ -79,9 +83,14 @@ class ApiException implements Exception {
           }
         }
         final statusCode = response?.statusCode;
-        final message = statusCode == 401
-            ? 'Invalid email or password. Please verify your credentials.'
-            : 'Server returned HTTP $statusCode error.';
+        final String message;
+        if (statusCode == 409) {
+          message = 'Vehicle number already exists in the fleet';
+        } else if (statusCode == 401) {
+          message = 'Invalid email or password. Please verify your credentials.';
+        } else {
+          message = 'Server returned HTTP $statusCode error.';
+        }
         return ApiException(
           statusCode: statusCode,
           message: message,
