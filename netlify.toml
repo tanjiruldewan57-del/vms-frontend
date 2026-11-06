@@ -1,6 +1,6 @@
 [build]
   publish = "build/web"
-  command = "if [ ! -d \"flutter\" ]; then git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter; fi && ./flutter/bin/flutter config --enable-web && ./flutter/bin/flutter build web --release"
+  command = "if [ ! -d \"flutter\" ]; then git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter; fi && ./flutter/bin/flutter config --enable-web && ./flutter/bin/flutter build web --release --dart-define=API_BASE_URL=https://vms-backend-7inh.onrender.com/api/v1"
 
 [[redirects]]
   from = "/*"

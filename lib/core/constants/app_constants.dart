@@ -23,6 +23,10 @@ class AppConstants {
   static const String routeVehicleCreate = '/vehicles/new';
   static const String routeVehicleEdit = '/vehicles/:id/edit';
 
+  // API Endpoints
+  static const String prodApiBaseUrl = 'https://vms-backend-7inh.onrender.com/api/v1';
+  static const String devApiBaseUrl = 'http://127.0.0.1:8080/api/v1';
+
   // Demo Credentials for Evaluators & Administrators
   static const String demoEmail = 'fleet.admin@starkgroup.com';
   static const String demoPassword = 'StarkFleet2024!';
